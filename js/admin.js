@@ -77,6 +77,8 @@
         // Apply current channel config
         var ch = state.channels[state.activeChannelIdx];
         if (ch && ch.config) applyChannelConfig(ch.config);
+        // One-time cleanup: remove legacy storage that may have stale full video data
+        try { localStorage.removeItem(STORAGE_KEY); } catch(ee) {}
       } else {
         // First time: create default channel from current state
         state.channels = [{ name: '默认频道', config: getChannelConfig() }];
@@ -96,29 +98,47 @@
       var payload = JSON.stringify({
         channels: state.channels, activeChannelIdx: state.activeChannelIdx
       });
-      console.log('[admin] saveChannels: payload size=', payload.length, 'fakeVideos count=', (ch ? (ch.config.fakeVideos || []).length : 'N/A'), 'first dataUrl len=', (ch && ch.config.fakeVideos && ch.config.fakeVideos[0] ? ch.config.fakeVideos[0].dataUrl.length : 'N/A'));
       localStorage.setItem(CHANNELS_KEY, payload);
-      console.log('[admin] saveChannels: OK');
+      console.log('[admin] saveChannels: OK, size=', (payload.length/1024/1024).toFixed(2), 'MB');
+      // Clean up legacy storage (no longer needed for video data)
+      try { localStorage.removeItem(STORAGE_KEY); } catch(ee) {}
       return true;
     } catch(e) {
       console.error('[admin] saveChannels FAILED:', e);
-      // Show visible warning to user
-      var msg = '⚠️ 数据保存失败！';
-      if (e.name === 'QuotaExceededError' || e.message.indexOf('quota') !== -1 || e.message.indexOf('Quota') !== -1) {
-        msg = '⚠️ 视频太大，存储空间不足！请尝试上传较小的视频（建议5MB以下）。';
-      }
-      // Try showing in drawer hint area or as alert
-      var hint = $('#fakeVideoHint');
-      if (hint) {
-        hint.innerHTML = '<span style="color:#ff6b6b;font-size:12px">' + msg + '</span>';
-        hint.style.display = '';
+      // Detect QuotaExceededError safely
+      var errStr = String(e.name || '') + String(e.message || '');
+      var isQuota = (e.name === 'QuotaExceededError' || errStr.indexOf('quota') !== -1 || errStr.indexOf('Quota') !== -1);
+
+      if (isQuota) {
+        // Try saving without video data first (at least preserve metadata)
+        try {
+          var stripped = JSON.parse(JSON.stringify(state.channels));
+          for (var si = 0; si < stripped.length; si++) {
+            var sc = stripped[si].config;
+            if (sc) {
+              if (Array.isArray(sc.fakeVideos)) {
+                sc.fakeVideos = sc.fakeVideos.map(function(v) { return { name: v.name }; });
+              }
+              sc.fakeVideoDataUrl = '';
+            }
+          }
+          localStorage.setItem(CHANNELS_KEY, JSON.stringify({
+            channels: stripped, activeChannelIdx: state.activeChannelIdx
+          }));
+          // Clean up legacy too
+          try { localStorage.removeItem(STORAGE_KEY); } catch(ee) {}
+        } catch(e2) { console.error('Stripped save also failed:', e2); }
+
+        // Compute storage usage
+        var usedBytes = 0;
+        for (var ki = 0; ki < localStorage.length; ki++) {
+          var k = localStorage.key(ki);
+          usedBytes += (k.length + (localStorage.getItem(k) || '').length) * 2; // UTF-16
+        }
+        var usedMB = (usedBytes / 1024 / 1024).toFixed(1);
+        showQuotaToast('⚠️ 存储空间已满（' + usedMB + ' MB）。请删除不用的视频或频道后再上传。');
       } else {
-        // Fallback: brief toast-like notification
-        var toast = document.createElement('div');
-        toast.textContent = msg;
-        toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ff6b6b;color:#fff;padding:10px 24px;border-radius:8px;z-index:99999;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,0.4)';
-        document.body.appendChild(toast);
-        setTimeout(function() { if(toast.parentNode) toast.remove(); }, 5000);
+        showQuotaToast('⚠️ 数据保存失败：' + (e.message || '未知错误'));
       }
       return false;
     }
@@ -213,7 +233,13 @@
 
   function saveState() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      // Strip video data from legacy storage — channels is the primary store
+      var clone = JSON.parse(JSON.stringify(state));
+      clone.fakeVideoDataUrl = '';
+      if (Array.isArray(clone.fakeVideos)) {
+        clone.fakeVideos = clone.fakeVideos.map(function(v) { return { name: v.name }; });
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(clone));
       return true;
     } catch(e) {
       console.error('[admin] saveState FAILED:', e);
@@ -225,6 +251,20 @@
     if (!s) return '';
     s = String(s);
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function showQuotaToast(msg) {
+    // Remove any existing toast
+    var old = document.getElementById('quotaToast');
+    if (old) old.remove();
+    var toast = document.createElement('div');
+    toast.id = 'quotaToast';
+    toast.textContent = msg;
+    toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#ff6b6b;border:1px solid #ff6b6b;padding:12px 28px;border-radius:10px;z-index:99999;font-size:14px;font-weight:500;box-shadow:0 8px 32px rgba(255,107,107,0.25);max-width:90vw;text-align:center;line-height:1.5';
+    document.body.appendChild(toast);
+    // Auto-dismiss click
+    toast.addEventListener('click', function() { toast.remove(); });
+    setTimeout(function() { if (toast.parentNode) toast.remove(); }, 8000);
   }
 
   // ========================================
