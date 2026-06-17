@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>直播观看</title>
+<meta id="metaTitle" name="title" content="">
+<meta id="metaDesc" name="description" content="">
+<meta id="metaImage" property="og:image" content="">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-left">
+    <span class="nav-brand" id="brandName">直播平台</span>
+    <span class="nav-badge">LIVE</span>
+  </div>
+  <div class="nav-center">
+    <span class="nav-title" id="navTitle" style="cursor:default">直播标题</span>
+  </div>
+  <div class="nav-right"></div>
+</nav>
+
+<div class="main-container">
+
+  <!-- Video + Chat Row -->
+  <div class="video-chat-row">
+    <!-- Video Area -->
+    <div class="video-area">
+      <div class="video-wrapper" id="videoWrapper">
+        <div class="live-tag">🔴 直播中</div>
+        <!-- 视频选择器 (多视频时显示) -->
+        <div class="video-selector" id="videoSelector" style="display:none">
+          <button class="video-selector-btn" id="videoSelectorBtn">
+            <span class="vs-icon">🎬</span>
+            <span class="vs-label" id="videoSelectorLabel">视频1</span>
+          </button>
+          <div class="video-selector-dropdown" id="videoSelectorDropdown"></div>
+        </div>
+        <div class="video-placeholder" id="videoPlaceholder">
+          <div class="icon">📺</div>
+          <p>直播未开始或已结束</p>
+        </div>
+        <video id="liveVideo" playsinline style="display:none;"></video>
+        <!-- 视频控制条（标准播放器样式） -->
+        <div class="vc-bar" id="vcBar">
+          <div class="vc-progress hidden" id="vcProgress">
+            <div class="vc-progress-filled" id="vcProgressFilled"></div>
+          </div>
+          <div class="vc-controls">
+            <button class="vc-btn" id="btnPlayPause" title="播放/暂停">⏸</button>
+            <span class="vc-time" id="vcTime">00:00 / 00:00</span>
+            <div class="vc-vol">
+              <span class="vc-vol-icon">🔊</span>
+              <input type="range" class="vc-vol-slider" id="adminVolume" min="0" max="1" step="0.05" value="0.8">
+            </div>
+            <span style="flex:1"></span>
+            <div class="vc-live-badge"><span class="live-dot"></span> LIVE</div>
+            <button class="vc-btn" id="btnFullscreen" title="全屏">⛶</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Sidebar -->
+    <div class="chat-sidebar" id="chatSidebar">
+      <div class="chat-header">💬 聊天互动</div>
+      <div class="chat-body" id="chatBody">
+        <div class="chat-empty">暂无消息</div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="发送聊天消息..." maxlength="200">
+        <button id="btnChatSend">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Intro (conditional) -->
+  <div class="content-section hidden" id="introSection">
+    <div class="section-header">
+      <span class="section-title">📝 活动简介</span>
+    </div>
+    <div class="section-body">
+      <div class="intro-content" id="introContent"></div>
+    </div>
+  </div>
+
+  <!-- Posters (conditional) -->
+  <div class="content-section hidden" id="posterSection">
+    <div class="section-header">
+      <span class="section-title" id="posterSectionTitle">📷 专家介绍</span>
+    </div>
+    <div class="section-body">
+      <div class="poster-list" id="posterList"></div>
+    </div>
+  </div>
+
+  <!-- Text Blocks (conditional) -->
+  <div class="content-section hidden" id="textSection">
+    <div class="section-header">
+      <span class="section-title" id="textSectionTitle">📝 文本内容</span>
+    </div>
+    <div class="section-body">
+      <div id="textBlockList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <img id="lightboxImg" src="" alt="">
+  <button class="lightbox-close" id="btnLightboxClose">✕</button>
+</div>
+
+<script src="js/viewer.js"></script>
+</body>
+</html>

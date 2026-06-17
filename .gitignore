@@ -1,0 +1,17 @@
+# Mac
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*~
+
+# WorkBuddy
+.workbuddy/
+overview.md

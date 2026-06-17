@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>直播管理后台</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ========================
+     NAVIGATION
+     ======================== -->
+<nav class="nav">
+  <div class="nav-left">
+    <span class="nav-brand" id="brandName">直播平台</span>
+    <span class="nav-badge">LIVE</span>
+  </div>
+  <div class="nav-center">
+    <input class="nav-title" id="navTitleInput" value="直播标题（点击编辑）" title="点击编辑直播标题">
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn settings-btn" id="btnSettings" title="直播设置">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="btn-label">设置</span>
+      <span class="unsaved-dot"></span>
+    </button>
+    <button class="nav-btn preview-btn" id="btnPreview" title="预览观众端">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="btn-label">预览</span>
+    </button>
+    <button class="nav-btn share-btn" id="btnShare" title="生成分享链接">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      <span class="btn-label">分享</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ========================
+     MAIN CONTENT
+     ======================== -->
+<div class="main-container">
+
+  <!-- Video + Chat Row -->
+  <div class="video-chat-row">
+    <!-- Video Area -->
+    <div class="video-area">
+      <div class="video-wrapper" id="videoWrapper">
+        <div class="live-tag">🔴 直播中</div>
+        <div class="video-placeholder" id="videoPlaceholder">
+          <div class="icon">📺</div>
+          <p>等待直播推流...</p>
+          <p style="font-size:0.8rem;color:var(--text-muted)">在设置中配置推流地址</p>
+        </div>
+        <video id="liveVideo" playsinline style="display:none;"></video>
+        <!-- 视频控制条（标准播放器样式） -->
+        <div class="vc-bar" id="vcBar">
+          <div class="vc-progress hidden" id="vcProgress">
+            <div class="vc-progress-filled" id="vcProgressFilled"></div>
+          </div>
+          <div class="vc-controls">
+            <button class="vc-btn" id="btnPlayPause" title="播放/暂停">⏸</button>
+            <span class="vc-time" id="vcTime">00:00 / 00:00</span>
+            <div class="vc-vol">
+              <span class="vc-vol-icon">🔊</span>
+              <input type="range" class="vc-vol-slider" id="adminVolume" min="0" max="1" step="0.05" value="0.8">
+            </div>
+            <span style="flex:1"></span>
+            <div class="vc-live-badge"><span class="live-dot"></span> LIVE</div>
+            <button class="vc-btn" id="btnFullscreen" title="全屏">⛶</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Sidebar -->
+    <div class="chat-sidebar" id="chatSidebar">
+      <div class="chat-header">💬 聊天互动</div>
+      <div class="chat-body" id="chatBody">
+        <div class="chat-empty">暂无消息，发送第一条吧~</div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="输入聊天内容..." maxlength="200">
+        <button id="btnChatSend">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Intro (conditional) -->
+  <div class="content-section hidden" id="introSection">
+    <div class="section-header">
+      <span class="section-title">📝 活动简介</span>
+    </div>
+    <div class="section-body">
+      <div class="intro-content" id="introContent"></div>
+    </div>
+  </div>
+
+  <!-- Posters (conditional) -->
+  <div class="content-section hidden" id="posterSection">
+    <div class="section-header">
+      <span class="section-title" id="posterSectionTitle">📷 专家介绍</span>
+    </div>
+    <div class="section-body">
+      <div class="poster-list" id="posterList"></div>
+    </div>
+  </div>
+
+  <!-- Text Blocks (conditional) -->
+  <div class="content-section hidden" id="textSection">
+    <div class="section-header">
+      <span class="section-title" id="textSectionTitle">📝 文本内容</span>
+    </div>
+    <div class="section-body">
+      <div id="textBlockList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========================
+     SETTINGS DRAWER
+     ======================== -->
+<div class="drawer-overlay" id="drawerOverlay">
+  <div class="drawer" id="drawer">
+    <div class="drawer-head">
+      <span class="drawer-head-title">⚙️ 直播设置</span>
+      <button class="drawer-close" id="btnDrawerClose">✕</button>
+    </div>
+
+    <!-- Channel Selector -->
+    <div class="channel-bar">
+      <label class="channel-label">📺 频道</label>
+      <select class="channel-select" id="channelSelect"></select>
+      <button class="channel-btn" id="btnChannelNew" title="新建频道">＋</button>
+      <button class="channel-btn channel-btn-del" id="btnChannelDel" title="删除当前频道">🗑</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="drawer-tabs">
+      <button class="drawer-tab active" data-tab="basic">⚙️ 基本设置</button>
+      <button class="drawer-tab" data-tab="intro">📝 活动简介</button>
+      <button class="drawer-tab" data-tab="poster">🖼️ 海报设置</button>
+      <button class="drawer-tab" data-tab="text">📝 文本设置</button>
+    </div>
+
+    <!-- Tab Panels -->
+    <div class="drawer-body">
+      <!-- Basic Settings -->
+      <div class="tab-panel active" data-panel="basic">
+        <div class="form-group">
+          <label class="form-label">封面图 <span class="help-icon" data-help="cover">?</span></label>
+          <div class="cover-upload" id="coverUpload">
+            <div id="coverPlaceholder">点击上传封面图<br><span style="font-size:0.75rem;color:var(--text-muted)">建议 16:9 比例，如 1280x720</span></div>
+          </div>
+          <input type="file" id="coverInput" accept="image/*" style="display:none">
+          <div class="help-tip" data-tip="cover">分享时作为缩略图展示，建议尺寸 1280×720，支持 JPG/PNG。</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">直播标题</label>
+          <input type="text" class="form-input" id="settingTitle" placeholder="请输入直播标题" maxlength="60">
+          <div class="form-hint">显示在页面顶部导航栏</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">品牌名称</label>
+          <input type="text" class="form-input" id="settingBrand" placeholder="请输入品牌/机构名称" maxlength="30">
+          <div class="form-hint">显示在导航栏左侧</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">推流地址 <span class="help-icon" data-help="stream">?</span></label>
+          <input type="text" class="form-input" id="settingStreamUrl" placeholder="https://...m3u8 或 iframe 链接">
+          <div class="form-hint">支持 HLS (m3u8)、腾讯云直播地址、腾讯会议直播链接</div>
+          <div class="help-tip" data-tip="stream">
+            腾讯会议商业版 + 腾讯云直播推流：<br>
+            1. 腾讯云直播获取推流地址(RTMP)<br>
+            2. 腾讯会议 → 自定义推流填入<br>
+            3. 腾讯云直播获取播放地址(m3u8)<br>
+            4. 填入此处<br><br>
+            <code>https://播放域名/live/房间号.m3u8</code>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">伪直播视频</label>
+          <div class="cover-upload" id="fakeVideoUpload" style="padding:20px">
+            <div id="fakeVideoPlaceholder">点击上传视频文件 (MP4)<br><span style="font-size:0.75rem;color:var(--text-muted)">使用伪直播时替代推流，支持多个视频</span></div>
+          </div>
+          <input type="file" id="fakeVideoInput" accept="video/mp4,video/webm,video/ogg" style="display:none">
+          <div class="form-hint" id="fakeVideoName"></div>
+          <!-- 上传进度条 -->
+          <div class="upload-progress hidden" id="uploadProgress">
+            <div class="upload-progress-bar" id="uploadProgressBar"></div>
+            <span class="upload-progress-text" id="uploadProgressText">0%</span>
+          </div>
+          <!-- 已上传视频列表 -->
+          <div class="video-list" id="videoList"></div>
+        </div>
+      </div>
+
+      <!-- Intro Settings -->
+      <div class="tab-panel" data-panel="intro">
+        <div class="form-group">
+          <label class="form-label">活动简介内容</label>
+          <textarea class="form-textarea" id="settingIntro" placeholder="输入活动简介内容...&#10;可换行，支持纯文本" rows="8"></textarea>
+          <div class="form-hint">填写后将在视频下方显示活动简介区，留空则不显示</div>
+        </div>
+      </div>
+
+      <!-- Poster Settings -->
+      <div class="tab-panel" data-panel="poster">
+        <div class="form-group">
+          <label class="form-label">区域标题</label>
+          <input type="text" class="form-input" id="settingPosterTitle" placeholder="如：专家介绍、嘉宾阵容" maxlength="30">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">海报图片</label>
+          <div class="form-hint" style="margin-bottom:10px">不上传海报则不显示该区域</div>
+          <div class="img-list" id="posterImgList"></div>
+          <button class="add-btn" id="btnAddPoster">+ 添加海报</button>
+          <span class="add-link" id="btnPosterUrl" style="font-size:0.8rem;color:var(--accent);cursor:pointer;margin-left:12px">或输入图片链接</span>
+          <input type="file" id="posterFileInput" accept="image/*" style="display:none" multiple>
+        </div>
+      </div>
+
+      <!-- Text Settings -->
+      <div class="tab-panel" data-panel="text">
+        <div class="form-group">
+          <label class="form-label">区域标题</label>
+          <input type="text" class="form-input" id="settingTextTitle" placeholder="如：本期议题、专家观点" maxlength="30">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">文本模块</label>
+          <div class="form-hint" style="margin-bottom:10px">不添加文本则不显示该区域</div>
+          <div id="textBlockSettings"></div>
+          <button class="add-btn" id="btnAddText">+ 添加文本模块</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="drawer-foot">
+      <div class="drawer-unsaved hidden" id="unsavedHint"><span class="dot"></span> 有未保存的更改</div>
+      <span style="flex:1"></span>
+      <div class="drawer-foot-btns">
+        <button class="btn btn-secondary" id="btnResetSettings">恢复默认</button>
+        <button class="btn btn-primary" id="btnSaveSettings">💾 保存设置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================
+     SHARE MODAL
+     ======================== -->
+<div class="modal" id="shareModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>📤 生成分享链接</h3>
+      <button class="modal-close" id="btnShareClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">分享头像 URL</label>
+        <input type="text" class="form-input" id="shareAvatarUrl" placeholder="输入头像图片URL（可选）">
+      </div>
+      <div class="form-group">
+        <label class="form-label">分享标题</label>
+        <input type="text" class="form-input" id="inputShareTitle" placeholder="分享时显示的标题">
+      </div>
+      <div class="form-group">
+        <label class="form-label">分享简介</label>
+        <textarea class="form-textarea" id="inputShareDesc" placeholder="分享时显示的简介文字" rows="2"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">分享链接</label>
+        <div class="share-link-box">
+          <input type="text" id="shareLink" readonly placeholder="点击下方生成...">
+          <button class="btn btn-sm btn-primary" id="btnCopyLink">复制</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" id="btnGenerateLink">🔗 生成分享链接</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" id="btnShareCancel">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image Lightbox -->
+<div class="lightbox" id="lightbox">
+  <img id="lightboxImg" src="" alt="">
+  <button class="lightbox-close" id="btnLightboxClose">✕</button>
+</div>
+
+<script src="js/admin.js?v=8"></script>
+</body>
+</html>
