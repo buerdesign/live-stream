@@ -93,26 +93,23 @@
         // Match by name to restore dataUrl
         var cv = config.fakeVideos[j];
         for (var k = 0; k < savedVideos.length; k++) {
-            if (saved.fakeVideos[k].name === cv.name && saved.fakeVideos[k].dataUrl) {
-              cv.dataUrl = saved.fakeVideos[k].dataUrl;
+            if (savedVideos[k].name === cv.name && savedVideos[k].dataUrl) {
+              cv.dataUrl = savedVideos[k].dataUrl;
               break;
             }
           }
           // Fallback: restore by index
-          if (!cv.dataUrl && saved.fakeVideos[j] && saved.fakeVideos[j].dataUrl) {
-            cv.dataUrl = saved.fakeVideos[j].dataUrl;
+          if (!cv.dataUrl && savedVideos[j] && savedVideos[j].dataUrl) {
+            cv.dataUrl = savedVideos[j].dataUrl;
           }
         }
       }
-      // Also restore active video dataUrl
-      if (saved.fakeVideoDataUrl && config.fakeVideos.length > 0) {
+      // Also restore active video dataUrl from savedVideos
+      if (savedVideos.length > 0 && config.fakeVideos.length > 0) {
         var aidx = config.activeVideoIdx || 0;
-        if (!config.fakeVideos[aidx] || !config.fakeVideos[aidx].dataUrl) {
-          var av = config.fakeVideos[aidx] || config.fakeVideos[0];
-          if (!av.dataUrl) av.dataUrl = saved.fakeVideoDataUrl;
-        }
+        var av = config.fakeVideos[aidx] || config.fakeVideos[0];
+        if (!av.dataUrl && savedVideos[aidx]) av.dataUrl = savedVideos[aidx].dataUrl;
       }
-      config.fakeVideoDataUrl = saved.fakeVideoDataUrl || '';
     } catch(e) {}
   }
 

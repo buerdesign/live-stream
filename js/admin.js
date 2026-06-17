@@ -874,7 +874,8 @@
   }
 
   function buildViewerUrl() {
-    var base = location.origin + location.pathname.replace(/index\.html$/, 'view.html');
+    var base = location.origin + location.pathname.replace(/index\.html$/, '').replace(/\/$/, '');
+    base = base + '/view.html';
     // Only include current channel config (not all channels)
     var viewerState = JSON.parse(JSON.stringify(getChannelConfig()));
     // Include share meta
