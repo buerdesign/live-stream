@@ -68,17 +68,25 @@
   function loadConfigFromLocalStorage() {
     try {
       console.log('[viewer] loadConfigFromLocalStorage start');
+      var diag = {};
       // Try channels storage first
       var chRaw = localStorage.getItem('live_channels_v1');
+      diag.hasChannels = !!chRaw;
       console.log('[viewer] live_channels_v1 exists:', !!chRaw);
       var cfg = null;
       if (chRaw) {
         var chData = JSON.parse(chRaw);
         var channels = chData.channels || [];
         var idx = chData.activeChannelIdx || 0;
+        diag.channelCount = channels.length;
+        diag.activeIdx = idx;
         console.log('[viewer] channels count:', channels.length, 'activeIdx:', idx);
         if (channels[idx] && channels[idx].config) {
           cfg = channels[idx].config;
+          diag.hasStreamUrl = !!cfg.streamUrl;
+          diag.fakeVideosCount = (cfg.fakeVideos || []).length;
+          diag.hasFakeVideoDataUrl = !!cfg.fakeVideoDataUrl;
+          diag.firstDataUrlLen = (cfg.fakeVideos && cfg.fakeVideos[0] && cfg.fakeVideos[0].dataUrl) ? cfg.fakeVideos[0].dataUrl.length : 0;
           console.log('[viewer] Got config from channel, has streamUrl:', !!cfg.streamUrl, 'fakeVideos count:', (cfg.fakeVideos || []).length, 'fakeVideoDataUrl:', !!cfg.fakeVideoDataUrl);
         } else {
           console.warn('[viewer] Channel not found at index', idx);
@@ -87,24 +95,39 @@
       // Fallback: legacy storage
       if (!cfg) {
         var raw = localStorage.getItem('live_admin_v2');
+        diag.hasLegacy = !!raw;
         console.log('[viewer] live_admin_v2 exists:', !!raw);
         if (raw) {
           cfg = JSON.parse(raw);
+          diag.hasStreamUrl = !!cfg.streamUrl;
+          diag.fakeVideosCount = (cfg.fakeVideos || []).length;
+          diag.firstDataUrlLen = (cfg.fakeVideos && cfg.fakeVideos[0] && cfg.fakeVideos[0].dataUrl) ? cfg.fakeVideos[0].dataUrl.length : 0;
           console.log('[viewer] Got config from legacy, has streamUrl:', !!cfg.streamUrl, 'fakeVideos count:', (cfg.fakeVideos || []).length);
         }
       }
-      if (!cfg) { console.warn('[viewer] No config found in any storage'); return false; }
+      if (!cfg) { console.warn('[viewer] No config found in any storage'); showDiagnostic(diag); return false; }
       // Must have either stream URL or fake videos to be valid
       if (!cfg.streamUrl && (!cfg.fakeVideos || cfg.fakeVideos.length === 0) && !cfg.fakeVideoDataUrl) {
         console.warn('[viewer] Config has no stream/fakeVideo content');
+        showDiagnostic(diag);
         return false;
       }
+
+      // Calculate localStorage usage for diagnostics
+      var totalUsed = 0;
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        totalUsed += (localStorage.getItem(key) || '').length;
+      }
+      diag.storageUsed = totalUsed;
+
       config = cfg;
       console.log('[viewer] Config loaded OK, first fakeVideo dataUrl length:', config.fakeVideos && config.fakeVideos[0] ? config.fakeVideos[0].dataUrl.length : 'N/A');
       // dataUrl is already present in localStorage config (no stripping needed)
       return true;
     } catch (e) {
       console.error('[viewer] loadConfigFromLocalStorage error:', e);
+      showDiagnostic({ error: String(e) });
       return false;
     }
   }
@@ -169,6 +192,39 @@
 
   function showError(msg) {
     $('#videoPlaceholder').innerHTML = `<p style="color:var(--danger)">⚠ ${escapeHtml(msg)}</p>`;
+  }
+
+  // Show diagnostic info on page for troubleshooting
+  function showDiagnostic(info) {
+    var ph = $('#videoPlaceholder');
+    if (!ph) return;
+    var html = '<div style="padding:20px;text-align:left;max-width:500px;margin:0 auto">';
+    html += '<p style="color:var(--text);margin-bottom:12px"><strong>🔍 诊断信息</strong></p>';
+    for (var k in info) {
+      if (!info.hasOwnProperty(k)) continue;
+      var v = info[k];
+      var label = k;
+      if (k === 'hasChannels') label = '频道数据 (live_channels_v1)';
+      else if (k === 'hasLegacy') label = '旧版数据 (live_admin_v2)';
+      else if (k === 'channelCount') label = '频道数量';
+      else if (k === 'activeIdx') label = '当前频道索引';
+      else if (k === 'hasStreamUrl') label = '推流地址';
+      else if (k === 'fakeVideosCount') label = '伪直播视频数';
+      else if (k === 'hasFakeVideoDataUrl') label = '活动视频 dataUrl';
+      else if (k === 'firstDataUrlLen') label = '首个视频 dataUrl 长度';
+      else if (k === 'storageUsed') label = 'localStorage 已用空间';
+      var valDisplay = String(v);
+      if (typeof v === 'number' && v > 1000) valDisplay = (v / 1024 / 1024).toFixed(2) + ' MB';
+      var color = (v === false || v === 0 || v === 'N/A') ? '#ff6b6b' : '#4ecdc4';
+      html += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">';
+      html += '<span style="color:rgba(255,255,255,0.6)">' + label + '</span>';
+      html += '<span style="color:' + color + ';font-weight:bold">' + valDisplay + '</span>';
+      html += '</div>';
+    }
+    html += '<p style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:16px">💡 请先在管理后台上传视频并保存设置，再刷新此页面</p>';
+    html += '</div>';
+    ph.innerHTML = html;
+    ph.style.display = '';
   }
 
   // ========================

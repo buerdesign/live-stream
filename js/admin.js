@@ -99,8 +99,28 @@
       console.log('[admin] saveChannels: payload size=', payload.length, 'fakeVideos count=', (ch ? (ch.config.fakeVideos || []).length : 'N/A'), 'first dataUrl len=', (ch && ch.config.fakeVideos && ch.config.fakeVideos[0] ? ch.config.fakeVideos[0].dataUrl.length : 'N/A'));
       localStorage.setItem(CHANNELS_KEY, payload);
       console.log('[admin] saveChannels: OK');
+      return true;
     } catch(e) {
       console.error('[admin] saveChannels FAILED:', e);
+      // Show visible warning to user
+      var msg = '⚠️ 数据保存失败！';
+      if (e.name === 'QuotaExceededError' || e.message.indexOf('quota') !== -1 || e.message.indexOf('Quota') !== -1) {
+        msg = '⚠️ 视频太大，存储空间不足！请尝试上传较小的视频（建议5MB以下）。';
+      }
+      // Try showing in drawer hint area or as alert
+      var hint = $('#fakeVideoHint');
+      if (hint) {
+        hint.innerHTML = '<span style="color:#ff6b6b;font-size:12px">' + msg + '</span>';
+        hint.style.display = '';
+      } else {
+        // Fallback: brief toast-like notification
+        var toast = document.createElement('div');
+        toast.textContent = msg;
+        toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ff6b6b;color:#fff;padding:10px 24px;border-radius:8px;z-index:99999;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,0.4)';
+        document.body.appendChild(toast);
+        setTimeout(function() { if(toast.parentNode) toast.remove(); }, 5000);
+      }
+      return false;
     }
   }
 
@@ -194,7 +214,11 @@
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch(e) {}
+      return true;
+    } catch(e) {
+      console.error('[admin] saveState FAILED:', e);
+      return false;
+    }
   }
 
   function esc(s) {
