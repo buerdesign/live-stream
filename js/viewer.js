@@ -39,6 +39,10 @@
   function parseConfig() {
     const hash = location.hash;
     if (!hash || !hash.startsWith('#config=')) {
+      // No hash param — try to auto-load from localStorage (same-device scenario)
+      if (loadConfigFromLocalStorage()) {
+        return true;
+      }
       showError('缺少配置参数，请使用正确的分享链接访问。');
       return false;
     }
@@ -51,6 +55,37 @@
       return true;
     } catch (e) {
       showError('配置参数解析失败，链接可能已损坏。');
+      return false;
+    }
+  }
+
+  function loadConfigFromLocalStorage() {
+    try {
+      // Try channels storage first
+      var chRaw = localStorage.getItem('live_channels_v1');
+      var cfg = null;
+      if (chRaw) {
+        var chData = JSON.parse(chRaw);
+        var channels = chData.channels || [];
+        var idx = chData.activeChannelIdx || 0;
+        if (channels[idx] && channels[idx].config) {
+          cfg = channels[idx].config;
+        }
+      }
+      // Fallback: legacy storage
+      if (!cfg) {
+        var raw = localStorage.getItem('live_admin_v2');
+        if (raw) cfg = JSON.parse(raw);
+      }
+      if (!cfg) return false;
+      // Must have either stream URL or fake videos to be valid
+      if (!cfg.streamUrl && (!cfg.fakeVideos || cfg.fakeVideos.length === 0) && !cfg.fakeVideoDataUrl) {
+        return false;
+      }
+      config = cfg;
+      // dataUrl is already present in localStorage config (no stripping needed)
+      return true;
+    } catch (e) {
       return false;
     }
   }

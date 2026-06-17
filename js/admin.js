@@ -894,6 +894,8 @@
   }
 
   function openPreview() {
+    saveState();
+    saveChannels();
     window.open(buildViewerUrl(), '_blank');
   }
 
