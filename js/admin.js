@@ -93,10 +93,15 @@
     try {
       var ch = state.channels[state.activeChannelIdx];
       if (ch) ch.config = getChannelConfig();
-      localStorage.setItem(CHANNELS_KEY, JSON.stringify({
+      var payload = JSON.stringify({
         channels: state.channels, activeChannelIdx: state.activeChannelIdx
-      }));
-    } catch(e) {}
+      });
+      console.log('[admin] saveChannels: payload size=', payload.length, 'fakeVideos count=', (ch ? (ch.config.fakeVideos || []).length : 'N/A'), 'first dataUrl len=', (ch && ch.config.fakeVideos && ch.config.fakeVideos[0] ? ch.config.fakeVideos[0].dataUrl.length : 'N/A'));
+      localStorage.setItem(CHANNELS_KEY, payload);
+      console.log('[admin] saveChannels: OK');
+    } catch(e) {
+      console.error('[admin] saveChannels FAILED:', e);
+    }
   }
 
   function saveCurrentChannelConfig() {
@@ -1084,6 +1089,7 @@
 
           var dataUrl = ev.target.result;
           var name = file.name;
+          console.log('[admin] Video loaded, dataUrl length:', dataUrl.length, 'name:', name);
 
           if (!Array.isArray(state.fakeVideos)) state.fakeVideos = [];
           state.fakeVideos.push({ name: name, dataUrl: dataUrl });
@@ -1302,6 +1308,7 @@
     // --- LOAD & RENDER ---
     loadState();
     loadChannels();
+    console.log('[admin] After loadChannels: fakeVideos count=', (state.fakeVideos || []).length, 'streamUrl:', !!state.streamUrl, 'first dataUrl len=', (state.fakeVideos && state.fakeVideos[0] ? state.fakeVideos[0].dataUrl.length : 'N/A'));
     render();
 
     console.log('[admin] init complete - all listeners registered');

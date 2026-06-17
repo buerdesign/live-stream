@@ -37,12 +37,16 @@
   }
 
   function parseConfig() {
+    console.log('[viewer] parseConfig start, hash=', location.hash.substring(0, 50));
     const hash = location.hash;
     if (!hash || !hash.startsWith('#config=')) {
+      console.log('[viewer] No #config= hash, trying localStorage...');
       // No hash param — try to auto-load from localStorage (same-device scenario)
       if (loadConfigFromLocalStorage()) {
+        console.log('[viewer] Loaded config from localStorage OK');
         return true;
       }
+      console.warn('[viewer] Failed to load from localStorage');
       showError('缺少配置参数，请使用正确的分享链接访问。');
       return false;
     }
@@ -50,10 +54,12 @@
       const encoded = hash.replace('#config=', '');
       const json = b64DecodeUnicode(encoded);
       config = JSON.parse(json);
+      console.log('[viewer] Parsed config from hash, fakeVideos count:', (config.fakeVideos || []).length, 'streamUrl:', !!config.streamUrl);
       // Restore video dataUrl from localStorage (too large for URL hash)
       restoreVideoData();
       return true;
     } catch (e) {
+      console.error('[viewer] parse error:', e);
       showError('配置参数解析失败，链接可能已损坏。');
       return false;
     }
@@ -61,31 +67,44 @@
 
   function loadConfigFromLocalStorage() {
     try {
+      console.log('[viewer] loadConfigFromLocalStorage start');
       // Try channels storage first
       var chRaw = localStorage.getItem('live_channels_v1');
+      console.log('[viewer] live_channels_v1 exists:', !!chRaw);
       var cfg = null;
       if (chRaw) {
         var chData = JSON.parse(chRaw);
         var channels = chData.channels || [];
         var idx = chData.activeChannelIdx || 0;
+        console.log('[viewer] channels count:', channels.length, 'activeIdx:', idx);
         if (channels[idx] && channels[idx].config) {
           cfg = channels[idx].config;
+          console.log('[viewer] Got config from channel, has streamUrl:', !!cfg.streamUrl, 'fakeVideos count:', (cfg.fakeVideos || []).length, 'fakeVideoDataUrl:', !!cfg.fakeVideoDataUrl);
+        } else {
+          console.warn('[viewer] Channel not found at index', idx);
         }
       }
       // Fallback: legacy storage
       if (!cfg) {
         var raw = localStorage.getItem('live_admin_v2');
-        if (raw) cfg = JSON.parse(raw);
+        console.log('[viewer] live_admin_v2 exists:', !!raw);
+        if (raw) {
+          cfg = JSON.parse(raw);
+          console.log('[viewer] Got config from legacy, has streamUrl:', !!cfg.streamUrl, 'fakeVideos count:', (cfg.fakeVideos || []).length);
+        }
       }
-      if (!cfg) return false;
+      if (!cfg) { console.warn('[viewer] No config found in any storage'); return false; }
       // Must have either stream URL or fake videos to be valid
       if (!cfg.streamUrl && (!cfg.fakeVideos || cfg.fakeVideos.length === 0) && !cfg.fakeVideoDataUrl) {
+        console.warn('[viewer] Config has no stream/fakeVideo content');
         return false;
       }
       config = cfg;
+      console.log('[viewer] Config loaded OK, first fakeVideo dataUrl length:', config.fakeVideos && config.fakeVideos[0] ? config.fakeVideos[0].dataUrl.length : 'N/A');
       // dataUrl is already present in localStorage config (no stripping needed)
       return true;
     } catch (e) {
+      console.error('[viewer] loadConfigFromLocalStorage error:', e);
       return false;
     }
   }
